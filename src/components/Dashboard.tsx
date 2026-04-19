@@ -162,21 +162,21 @@ export default function Dashboard() {
   }[lang];
 
   const menuItems = [
-    { id: 'products', label: t.products, icon: Package, roles: ["Marketing Team", "Technical Team", "Technical Back Office", "Call Center", "Manager", "Super Visor"] },
-    { id: 'coding', label: t.coding, icon: Tag, roles: ["Coding Team", "Technical Team", "Manager", "Super Visor"] },
-    { id: 'technical', label: t.technical, icon: Code, roles: ["Technical Team", "Manager", "Marketing Team", "Restaurants", "Super Visor"] },
+    { id: 'products', label: t.products, icon: Package, roles: ["Marketing Team", "Technical Team", "Technical Back Office", "Call Center", "Manager", "Super Visor", "Operation Manager"] },
+    { id: 'coding', label: t.coding, icon: Tag, roles: ["Coding Team", "Technical Team", "Manager", "Super Visor", "Operation Manager"] },
+    { id: 'technical', label: t.technical, icon: Code, roles: ["Technical Team", "Manager", "Marketing Team", "Restaurants", "Super Visor", "Operation Manager"] },
     { id: 'fields', label: t.fields, icon: Settings, roles: ["Manager"] },
-    { id: 'hide_unhide', label: t.hideUnhide, icon: EyeOff, roles: ["Technical Back Office", "Manager", "Call Center", "Restaurants", "Super Visor", "Area Manager"] },
+    { id: 'hide_unhide', label: t.hideUnhide, icon: EyeOff, roles: ["Technical Back Office", "Manager", "Call Center", "Restaurants", "Super Visor", "Area Manager", "Operation Manager"] },
     { id: 'hide_item_config', label: t.hideItemConfig, icon: Settings, roles: ["Manager"] },
-    { id: 'late_orders', label: t.lateOrders, icon: Clock, roles: ["Call Center", "Restaurants", "Manager", "Technical Back Office", "Super Visor", "Area Manager"] },
-    { id: 'busy_periods', label: t.busyPeriods, icon: AlertCircle, roles: ["Technical Back Office", "Manager", "Restaurants", "Super Visor", "Call Center", "Area Manager"] },
-    { id: 'requests_branch', label: t.requestsBranch, icon: Inbox, roles: ["Technical Back Office", "Manager", "Super Visor"] },
+    { id: 'late_orders', label: t.lateOrders, icon: Clock, roles: ["Call Center", "Restaurants", "Manager", "Technical Back Office", "Super Visor", "Area Manager", "Operation Manager"] },
+    { id: 'busy_periods', label: t.busyPeriods, icon: AlertCircle, roles: ["Technical Back Office", "Manager", "Restaurants", "Super Visor", "Call Center", "Area Manager", "Operation Manager"] },
+    { id: 'requests_branch', label: t.requestsBranch, icon: Inbox, roles: ["Technical Back Office", "Manager", "Super Visor", "Operation Manager"] },
     { id: 'orders', label: t.orders, icon: FileText, roles: ["Restaurants"] },
-    { id: 'busy_config', label: t.busyConfig, icon: Settings, roles: ["Manager"] },
-    { id: 'call_center_config', label: t.callCenterConfig, icon: Settings, roles: ["Manager", "Super Visor"] },
-    { id: 'logs', label: t.logs, icon: History, roles: ["Manager", "Super Visor"] },
-    { id: 'analytics', label: t.analytics, icon: BarChart3, roles: ["Manager", "Super Visor", "Area Manager"] },
-    { id: 'user_kpi', label: t.myKpi, icon: Activity, roles: ["Marketing Team", "Technical Team", "Technical Back Office", "Call Center", "Coding Team", "Super Visor"] },
+    { id: 'busy_config', label: t.busyConfig, icon: Settings, roles: ["Manager", "Operation Manager"] },
+    { id: 'call_center_config', label: t.callCenterConfig, icon: Settings, roles: ["Manager", "Super Visor", "Operation Manager"] },
+    { id: 'logs', label: t.logs, icon: History, roles: ["Manager", "Super Visor", "Operation Manager"] },
+    { id: 'analytics', label: t.analytics, icon: BarChart3, roles: ["Manager", "Super Visor", "Area Manager", "Operation Manager"] },
+    { id: 'user_kpi', label: t.myKpi, icon: Activity, roles: ["Marketing Team", "Technical Team", "Technical Back Office", "Call Center", "Coding Team", "Super Visor", "Operation Manager"] },
     { id: 'users', label: t.users, icon: Users, roles: ["Manager", "Super Visor"] },
   ].filter(item => item.roles.includes(user?.role_name || ''));
 
@@ -231,7 +231,7 @@ export default function Dashboard() {
     if (activeTab === 'orders') {
       return <OrdersView />;
     }
-    if (user?.role_name === 'Manager' || user?.role_name === 'Super Visor' || user?.role_name === 'Technical Back Office') {
+    if (user?.role_name === 'Manager' || user?.role_name === 'Super Visor' || user?.role_name === 'Technical Back Office' || user?.role_name === 'Operation Manager') {
       return <ManagerView activeTab={activeTab} />;
     }
     return null;
