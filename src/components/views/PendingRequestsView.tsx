@@ -7,6 +7,7 @@ import { PendingRequest } from '../../types';
 import * as XLSX from 'xlsx';
 
 import { useFetch } from '../../hooks/useFetch';
+import { useWebSocket } from '../../hooks/useWebSocket';
 
 interface PendingRequestsViewProps {
   filterType?: 'hide_unhide' | 'busy_branch';
@@ -15,6 +16,7 @@ interface PendingRequestsViewProps {
 export default function PendingRequestsView({ filterType }: PendingRequestsViewProps) {
   const { lang, user } = useAuth();
   const { fetchWithAuth } = useFetch();
+  const lastMessage = useWebSocket();
   const [requests, setRequests] = useState<PendingRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -78,6 +80,12 @@ export default function PendingRequestsView({ filterType }: PendingRequestsViewP
   useEffect(() => {
     fetchRequests();
   }, []);
+
+  useEffect(() => {
+    if (lastMessage?.type === 'PENDING_REQUEST_CREATED' || lastMessage?.type === 'PENDING_REQUEST_UPDATED') {
+      fetchRequests();
+    }
+  }, [lastMessage]);
 
   const handleAction = async (id: number, action: 'approve' | 'reject') => {
     setProcessingId(id);
