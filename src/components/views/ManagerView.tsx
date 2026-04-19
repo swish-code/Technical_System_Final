@@ -1087,7 +1087,8 @@ export default function ManagerView({ activeTab }: { activeTab: string }) {
                       )}
                     </div>
                   ) : (roles.find(r => r.id === formData.role_id)?.name === 'Call Center' ||
-                       roles.find(r => r.id === formData.role_id)?.name === 'Marketing Team') && (
+                       roles.find(r => r.id === formData.role_id)?.name === 'Marketing Team' ||
+                       roles.find(r => r.id === formData.role_id)?.name === 'Operation Manager') && (
                     <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
                       <label className="text-[10px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-widest ml-1 flex items-center gap-2">
                         <Briefcase size={12} className="text-zinc-300" />
