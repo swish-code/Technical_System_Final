@@ -12,7 +12,7 @@ export default function TechnicalBackOfficeView() {
   const { lang, user } = useAuth();
   const { fetchWithAuth } = useFetch();
 
-  if (!user || !['Technical Back Office', 'Manager', 'Super Visor', 'Restaurants', 'Call Center', 'Area Manager'].includes(user.role_name)) {
+  if (!user || !['Technical Back Office', 'Manager', 'Super Visor', 'Restaurants', 'Call Center', 'Area Manager', 'Operation Manager'].includes(user.role_name)) {
     return (
       <div className="flex items-center justify-center h-64">
         <p className="text-zinc-500 font-bold">{lang === 'en' ? 'Access Denied' : 'غير مسموح بالدخول'}</p>
