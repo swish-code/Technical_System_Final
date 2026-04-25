@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { API_URL, cn, formatDate, safeJson } from '../../lib/utils';
-import { CheckCircle2, XCircle, Clock, User, AlertCircle, Eye, Check, X, Loader2, Download, RefreshCw } from 'lucide-react';
+import { CheckCircle2, XCircle, Clock, User, AlertCircle, Eye, Check, X, Loader2, Download, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { PendingRequest } from '../../types';
 import * as XLSX from 'xlsx';
@@ -28,6 +28,10 @@ export default function PendingRequestsView({ filterType }: PendingRequestsViewP
   const [branchFilter, setBranchFilter] = useState<string>('all');
   const [brands, setBrands] = useState<any[]>([]);
   const [branches, setBranches] = useState<any[]>([]);
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
 
   const fetchRequests = async () => {
     setLoading(true);
@@ -86,6 +90,10 @@ export default function PendingRequestsView({ filterType }: PendingRequestsViewP
       fetchRequests();
     }
   }, [lastMessage]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [viewMode, typeFilter, brandFilter, branchFilter]);
 
   const handleAction = async (id: number, action: 'approve' | 'reject') => {
     setProcessingId(id);
@@ -189,6 +197,10 @@ export default function PendingRequestsView({ filterType }: PendingRequestsViewP
     
     return matchesMode && matchesType && matchesBrand && matchesBranch;
   });
+
+  const totalPages = Math.ceil(filteredRequests.length / pageSize);
+  const startIndex = (currentPage - 1) * pageSize;
+  const paginatedRequests = filteredRequests.slice(startIndex, startIndex + pageSize);
 
   if (loading) {
     return (
@@ -315,110 +327,168 @@ export default function PendingRequestsView({ filterType }: PendingRequestsViewP
             </p>
           </div>
         ) : (
-          filteredRequests.map((request) => (
-            <motion.div
-              layout
-              key={request.id}
-              className={cn(
-                "bg-white dark:bg-zinc-900 rounded-2xl border p-5 transition-all",
-                request.status === 'Pending' ? "border-amber-200 dark:border-amber-900/30 bg-amber-50/10" :
-                request.status === 'Approved' ? "border-emerald-200 dark:border-emerald-900/30 bg-emerald-50/10" :
-                "border-red-200 dark:border-red-900/30 bg-red-50/10"
-              )}
-            >
-              <div className="flex flex-wrap justify-between items-center gap-4">
-                <div className="flex items-center gap-4">
-                  <div className={cn(
-                    "w-12 h-12 rounded-xl flex items-center justify-center shadow-sm",
-                    request.type === 'hide_unhide' 
-                      ? "bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600" 
-                      : "bg-amber-100 dark:bg-amber-900/50 text-amber-600"
-                  )}>
-                    {request.type === 'hide_unhide' ? <Eye size={20} /> : <Clock size={20} />}
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className={cn(
-                        "text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md border",
-                        request.type === 'hide_unhide'
-                          ? "bg-indigo-50 text-indigo-600 border-indigo-100 dark:bg-indigo-900/20 dark:border-indigo-800"
-                          : "bg-amber-50 text-amber-600 border-amber-100 dark:bg-amber-900/20 dark:border-amber-800"
-                      )}>
-                        {request.type === 'hide_unhide' ? (lang === 'en' ? 'Hide/Unhide' : 'إخفاء/إظهار') : (lang === 'en' ? 'Busy Branch' : 'فرع مزدحم')}
-                      </span>
-                      <div className="w-1 h-1 rounded-full bg-zinc-300" />
-                      <span className="text-xs font-black uppercase tracking-widest text-zinc-400">
-                        {request.type === 'hide_unhide' ? (
-                          request.data.action === 'UNHIDE' 
-                            ? (lang === 'en' ? 'Unhide Request' : 'طلب إظهار')
-                            : (lang === 'en' ? 'Hide Request' : 'طلب إخفاء')
-                        ) : (
-                          request.data.action === 'OPEN'
-                            ? (lang === 'en' ? 'Open Branch Request' : 'طلب فتح فرع')
-                            : (lang === 'en' ? 'Busy Branch Request' : 'طلب فرع مزدحم')
-                        )}
-                      </span>
-                      <div className="w-1 h-1 rounded-full bg-zinc-300" />
-                      <span className="text-xs font-bold text-zinc-500">{formatDate(request.created_at)}</span>
+          <>
+            {paginatedRequests.map((request) => (
+              <motion.div
+                layout
+                key={request.id}
+                className={cn(
+                  "bg-white dark:bg-zinc-900 rounded-2xl border p-5 transition-all",
+                  request.status === 'Pending' ? "border-amber-200 dark:border-amber-900/30 bg-amber-50/10" :
+                  request.status === 'Approved' ? "border-emerald-200 dark:border-emerald-900/30 bg-emerald-50/10" :
+                  "border-red-200 dark:border-red-900/30 bg-red-50/10"
+                )}
+              >
+                <div className="flex flex-wrap justify-between items-center gap-4">
+                  <div className="flex items-center gap-4">
+                    <div className={cn(
+                      "w-12 h-12 rounded-xl flex items-center justify-center shadow-sm",
+                      request.type === 'hide_unhide' 
+                        ? "bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600" 
+                        : "bg-amber-100 dark:bg-amber-900/50 text-amber-600"
+                    )}>
+                      {request.type === 'hide_unhide' ? <Eye size={20} /> : <Clock size={20} />}
                     </div>
-                    <h3 className="text-lg font-black text-zinc-900 dark:text-white">
-                      {lang === 'en' ? 'From' : 'من'}: {request.username} 
-                      {request.data.branch_name && <span className="text-zinc-400 font-medium ml-2">({request.data.branch_name})</span>}
-                      {request.data.branch && <span className="text-zinc-400 font-medium ml-2">({request.data.branch})</span>}
-                    </h3>
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className={cn(
+                          "text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md border",
+                          request.type === 'hide_unhide'
+                            ? "bg-indigo-50 text-indigo-600 border-indigo-100 dark:bg-indigo-900/20 dark:border-indigo-800"
+                            : "bg-amber-50 text-amber-600 border-amber-100 dark:bg-amber-900/20 dark:border-amber-800"
+                        )}>
+                          {request.type === 'hide_unhide' ? (lang === 'en' ? 'Hide/Unhide' : 'إخفاء/إظهار') : (lang === 'en' ? 'Busy Branch' : 'فرع مزدحم')}
+                        </span>
+                        <div className="w-1 h-1 rounded-full bg-zinc-300" />
+                        <span className="text-xs font-black uppercase tracking-widest text-zinc-400">
+                          {request.type === 'hide_unhide' ? (
+                            request.data.action === 'UNHIDE' 
+                              ? (lang === 'en' ? 'Unhide Request' : 'طلب إظهار')
+                              : (lang === 'en' ? 'Hide Request' : 'طلب إخفاء')
+                          ) : (
+                            request.data.action === 'OPEN'
+                              ? (lang === 'en' ? 'Open Branch Request' : 'طلب فتح فرع')
+                              : (lang === 'en' ? 'Busy Branch Request' : 'طلب فرع مزدحم')
+                          )}
+                        </span>
+                        <div className="w-1 h-1 rounded-full bg-zinc-300" />
+                        <span className="text-xs font-bold text-zinc-500">{formatDate(request.created_at)}</span>
+                      </div>
+                      <h3 className="text-lg font-black text-zinc-900 dark:text-white">
+                        {lang === 'en' ? 'From' : 'من'}: {request.username} 
+                        {request.data.branch_name && <span className="text-zinc-400 font-medium ml-2">({request.data.branch_name})</span>}
+                        {request.data.branch && <span className="text-zinc-400 font-medium ml-2">({request.data.branch})</span>}
+                      </h3>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => setSelectedRequest(request)}
+                      className="p-2 bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 rounded-xl hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-all"
+                      title="View Details"
+                    >
+                      <Eye size={18} />
+                    </button>
+                    {request.status === 'Pending' && user?.role_name !== 'Restaurants' && (
+                      <>
+                        <button
+                          onClick={() => handleAction(request.id, 'approve')}
+                          disabled={processingId === request.id}
+                          className="flex items-center gap-2 px-4 py-2 bg-emerald-500 text-white rounded-xl font-bold hover:bg-emerald-600 transition-all disabled:opacity-50"
+                        >
+                          {processingId === request.id ? <Loader2 size={18} className="animate-spin" /> : <Check size={18} />}
+                          {lang === 'en' ? 'Approve' : 'موافقة'}
+                        </button>
+                        <button
+                          onClick={() => handleAction(request.id, 'reject')}
+                          disabled={processingId === request.id}
+                          className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-xl font-bold hover:bg-red-600 transition-all disabled:opacity-50"
+                        >
+                          {processingId === request.id ? <Loader2 size={18} className="animate-spin" /> : <X size={18} />}
+                          {lang === 'en' ? 'Reject' : 'رفض'}
+                        </button>
+                      </>
+                    )}
+                    {request.status === 'Pending' && user?.role_name === 'Restaurants' && (
+                      <div className="px-4 py-1.5 bg-amber-100 text-amber-700 rounded-xl font-bold text-xs uppercase tracking-widest">
+                        {lang === 'en' ? 'Pending Approval' : 'في انتظار الموافقة'}
+                      </div>
+                    )}
+                    {request.status !== 'Pending' && (
+                      <div className="flex flex-col items-end">
+                        <div className={cn(
+                          "px-4 py-1.5 rounded-xl font-bold text-xs uppercase tracking-widest",
+                          request.status === 'Approved' ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700"
+                        )}>
+                          {request.status}
+                        </div>
+                        <div className="text-[10px] font-bold text-zinc-400 mt-1">
+                          {lang === 'en' ? 'By' : 'بواسطة'}: {request.processor_name} • {formatDate(request.updated_at)}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
+              </motion.div>
+            ))}
 
-                <div className="flex items-center gap-3">
+            {/* Pagination Controls */}
+            {filteredRequests.length > pageSize && (
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 pb-2">
+                <div className="text-zinc-500 dark:text-zinc-400 text-sm font-bold">
+                  {lang === 'ar' 
+                    ? `عرض ${startIndex + 1}-${Math.min(startIndex + pageSize, filteredRequests.length)} من ${filteredRequests.length} سجل`
+                    : `Showing ${startIndex + 1}–${Math.min(startIndex + pageSize, filteredRequests.length)} of ${filteredRequests.length} records`}
+                </div>
+                
+                <div className="flex items-center gap-2">
                   <button
-                    onClick={() => setSelectedRequest(request)}
-                    className="p-2 bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 rounded-xl hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-all"
-                    title="View Details"
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                    className="p-2 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 disabled:opacity-50 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-all font-bold text-sm flex items-center gap-1"
                   >
-                    <Eye size={18} />
+                    <ChevronLeft size={16} />
+                    {lang === 'ar' ? 'السابق' : 'Prev'}
                   </button>
-                  {request.status === 'Pending' && user?.role_name !== 'Restaurants' && (
-                    <>
-                      <button
-                        onClick={() => handleAction(request.id, 'approve')}
-                        disabled={processingId === request.id}
-                        className="flex items-center gap-2 px-4 py-2 bg-emerald-500 text-white rounded-xl font-bold hover:bg-emerald-600 transition-all disabled:opacity-50"
-                      >
-                        {processingId === request.id ? <Loader2 size={18} className="animate-spin" /> : <Check size={18} />}
-                        {lang === 'en' ? 'Approve' : 'موافقة'}
-                      </button>
-                      <button
-                        onClick={() => handleAction(request.id, 'reject')}
-                        disabled={processingId === request.id}
-                        className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-xl font-bold hover:bg-red-600 transition-all disabled:opacity-50"
-                      >
-                        {processingId === request.id ? <Loader2 size={18} className="animate-spin" /> : <X size={18} />}
-                        {lang === 'en' ? 'Reject' : 'رفض'}
-                      </button>
-                    </>
-                  )}
-                  {request.status === 'Pending' && user?.role_name === 'Restaurants' && (
-                    <div className="px-4 py-1.5 bg-amber-100 text-amber-700 rounded-xl font-bold text-xs uppercase tracking-widest">
-                      {lang === 'en' ? 'Pending Approval' : 'في انتظار الموافقة'}
-                    </div>
-                  )}
-                  {request.status !== 'Pending' && (
-                    <div className="flex flex-col items-end">
-                      <div className={cn(
-                        "px-4 py-1.5 rounded-xl font-bold text-xs uppercase tracking-widest",
-                        request.status === 'Approved' ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700"
-                      )}>
-                        {request.status}
-                      </div>
-                      <div className="text-[10px] font-bold text-zinc-400 mt-1">
-                        {lang === 'en' ? 'By' : 'بواسطة'}: {request.processor_name} • {formatDate(request.updated_at)}
-                      </div>
-                    </div>
-                  )}
+                  
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                      let pageNum;
+                      if (totalPages <= 5) pageNum = i + 1;
+                      else if (currentPage <= 3) pageNum = i + 1;
+                      else if (currentPage >= totalPages - 2) pageNum = totalPages - 4 + i;
+                      else pageNum = currentPage - 2 + i;
+                      
+                      return (
+                        <button
+                          key={pageNum}
+                          onClick={() => setCurrentPage(pageNum)}
+                          className={cn(
+                            "w-10 h-10 rounded-xl font-black text-sm transition-all",
+                            currentPage === pageNum 
+                              ? "bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 shadow-lg" 
+                              : "bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-500 hover:bg-zinc-50 dark:hover:bg-zinc-800"
+                          )}
+                        >
+                          {pageNum}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <button
+                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages}
+                    className="p-2 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 disabled:opacity-50 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-all font-bold text-sm flex items-center gap-1"
+                  >
+                    {lang === 'ar' ? 'التالي' : 'Next'}
+                    <ChevronRight size={16} />
+                  </button>
                 </div>
               </div>
-            </motion.div>
-          ))
+            )}
+          </>
         )}
       </div>
 
