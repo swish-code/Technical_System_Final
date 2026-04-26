@@ -185,7 +185,7 @@ export default function TechnicalBackOfficeView() {
       submit: "Create Record",
       selectBrand: "Select a brand first",
       busyTab: "Busy Periods",
-      databaseTab: "Database",
+      databaseTab: "History",
       technicalTab: "Technical Cases",
     },
     ar: {
@@ -203,7 +203,7 @@ export default function TechnicalBackOfficeView() {
       submit: "إنشاء سجل",
       selectBrand: "اختر علامة تجارية أولاً",
       busyTab: "فترات الازدحام",
-      databaseTab: "قاعدة البيانات",
+      databaseTab: "السجل",
       technicalTab: "الحالات التقنية",
     }
   }[lang];
