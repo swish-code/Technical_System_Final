@@ -28,7 +28,7 @@ import { useFetch } from '../../hooks/useFetch';
 
 export default function HideItemView() {
   const { lang, user } = useAuth();
-  const { fetchWithAuth, fetchJson } = useFetch();
+  const { fetchWithAuth } = useFetch();
   const [brands, setBrands] = useState<Brand[]>([]);
   const [branches, setBranches] = useState<Branch[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
@@ -37,7 +37,7 @@ export default function HideItemView() {
   const [fields, setFields] = useState<any[]>([]);
   
   const [selectedBrand, setSelectedBrand] = useState<string>('');
-  const [selectedBranch, setSelectedBranch] = useState<string>(user?.branch_id ? user.branch_id.toString() : 'all');
+  const [selectedBranch, setSelectedBranch] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedProductIds, setSelectedProductIds] = useState<number[]>([]);
   
@@ -120,13 +120,14 @@ export default function HideItemView() {
 
   const fetchBrandSpecificData = async () => {
     try {
-      const [brData, pData] = await Promise.all([
-        fetchJson(`${API_URL}/branches`),
-        fetchJson(`${API_URL}/products?brand_id=${selectedBrand}&limit=5000`)
+      const [branchesRes, productsRes] = await Promise.all([
+        fetchWithAuth(`${API_URL}/branches`),
+        fetchWithAuth(`${API_URL}/products?brand_id=${selectedBrand}&limit=1000`)
       ]);
-      if (brData) {
-        if (Array.isArray(brData)) {
-          let filteredBranches = brData.filter((b: Branch) => b.brand_id === Number(selectedBrand));
+      if (branchesRes.ok) {
+        const allBranches = await branchesRes.json();
+        if (Array.isArray(allBranches)) {
+          let filteredBranches = allBranches.filter((b: Branch) => b.brand_id === Number(selectedBrand));
           
           // Filter for Restaurants role
           if (user?.role_name === 'Restaurants' && user.branch_id) {
@@ -134,9 +135,7 @@ export default function HideItemView() {
           }
           
           setBranches(filteredBranches);
-          if (user?.branch_id && filteredBranches.some(b => b.id === user.branch_id)) {
-            setSelectedBranch(user.branch_id.toString());
-          } else if (filteredBranches.length === 1) {
+          if (filteredBranches.length === 1) {
             setSelectedBranch(filteredBranches[0].id.toString());
           } else if (user?.role_name === 'Restaurants' && filteredBranches.length === 0) {
             // If no branches match but user is restaurant, clear selection
@@ -146,14 +145,15 @@ export default function HideItemView() {
           setBranches([]);
         }
       }
-      if (pData) {
-        if (pData && Array.isArray(pData.products)) {
+      if (productsRes.ok) {
+        const data = await productsRes.json();
+        if (data && Array.isArray(data.products)) {
           const productNameFieldId = (Array.isArray(fields) ? fields : []).find(f => f.name_en === 'Product Name (EN)')?.id || 3;
           const ingredientsFieldId = (Array.isArray(fields) ? fields : []).find(f => f.name_en === 'Ingredients')?.id;
           
-          const mappedProducts = pData.products.map((p: any) => {
-            const nameValue = pData.fieldValues?.find((fv: any) => fv.product_id === p.id && fv.field_id === productNameFieldId);
-            const ingredientsValue = pData.fieldValues?.find((fv: any) => fv.product_id === p.id && fv.field_id === ingredientsFieldId);
+          const mappedProducts = data.products.map((p: any) => {
+            const nameValue = data.fieldValues?.find((fv: any) => fv.product_id === p.id && fv.field_id === productNameFieldId);
+            const ingredientsValue = data.fieldValues?.find((fv: any) => fv.product_id === p.id && fv.field_id === ingredientsFieldId);
             
             return { 
               ...p, 
