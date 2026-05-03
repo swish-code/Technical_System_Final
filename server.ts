@@ -11,6 +11,7 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import * as XLSX from "xlsx";
 import * as fs from "fs";
+import webpush from "web-push";
 
 const { Pool } = pg;
 
@@ -61,6 +62,15 @@ if (process.env.DATABASE_URL?.includes('postgres.railway.internal')) {
 }
 
 const JWT_SECRET = process.env.JWT_SECRET || "super-secret-key";
+
+const publicVapidKey = process.env.VAPID_PUBLIC_KEY || "BPvvbYFYczd-5pgdA_o4ldU7JaujmxF9uXFaP0szQKYc3oZPObqpTc4ofOPtV4YJJafIuYbMKKRnJ0Bd5X7tnYM";
+const privateVapidKey = process.env.VAPID_PRIVATE_KEY || "g9z0Rc7XOE4ATzYo2yqfpJlWk5UXpm1jTDAeuhXToQE";
+
+webpush.setVapidDetails(
+  "mailto:example@yourdomain.com",
+  publicVapidKey,
+  privateVapidKey
+);
 
 // Compatibility wrapper for PostgreSQL (Async)
 const db = {
@@ -749,6 +759,16 @@ try {
       // Column already exists or other error
     }
   }
+
+  await db.exec(`
+    CREATE TABLE IF NOT EXISTS push_subscriptions (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL,
+      subscription TEXT NOT NULL, -- JSON string
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+  `);
 
   // Migration: Add updated_at and updated_by to hidden_items
   try {
@@ -2171,36 +2191,103 @@ const productSeedingData: Record<string, string[]> = {
     "BBQ Chicken Fries"
   ],
   "BBT": [
-    "BBT Classic Burger",
-    "BBT Double Cheese",
-    "BBT Spicy Chicken",
-    "BBT Mushroom Swiss",
-    "BBT BBQ Bacon",
-    "BBT Veggie Burger",
-    "BBT Crispy Chicken",
-    "BBT Grilled Chicken",
-    "BBT Steak Sandwich",
-    "BBT Philly Cheesesteak",
-    "BBT Original Fries",
-    "BBT Cheese Fries",
-    "BBT Loaded Fries",
-    "BBT Sweet Potato Fries",
-    "BBT Onion Rings",
-    "BBT Chicken Nuggets",
-    "BBT Chicken Tenders",
-    "BBT Buffalo Wings",
-    "BBT BBQ Wings",
-    "BBT Caesar Salad",
-    "BBT Garden Salad",
-    "BBT Coleslaw",
-    "BBT Chocolate Shake",
-    "BBT Vanilla Shake",
-    "BBT Strawberry Shake",
-    "BBT Oreo Shake",
-    "BBT Fresh Orange Juice",
-    "BBT Lemonade",
-    "BBT Soft Drink",
-    "BBT Mineral Water"
+    "7up",
+    "Aquafina Water",
+    "3.5KD Deal",
+    "BBQ Sauce",
+    "BBT Mayo",
+    "BBT Ranch Sauce",
+    "BBT Sauce",
+    "Buttercup",
+    "Cheese Dip",
+    "CLASSIC ROLLS BEEF",
+    "CLASSIC ROLLS BEEF Meal",
+    "Cheeseburger Duo Combo",
+    "Chicken Fillaaa",
+    "Chicken Fillaaa Meal",
+    "Chicken Nugget Meal",
+    "Chicken Nuggets",
+    "Chili Lime",
+    "Chilli Lime Old Skool",
+    "Chilli Lime Supreme",
+    "Chilli Lime Old Skool Meal",
+    "Chilli Lime Supreme Meal",
+    "Chilli Lime Tenders Fillaaa (New)",
+    "Classic Old Skool",
+    "Classic Supreme",
+    "Classic Old Skool Meal",
+    "Classic Supreme Meal",
+    "Coleslaw",
+    "Crispy Fries",
+    "Curly Fries",
+    "Extra 1pc Tenders",
+    "Extra 1pc Toast",
+    "Extra Cheese",
+    "Extra Coleslaw",
+    "Extra Sauce",
+    "Fillaaa Sauce",
+    "FILAAA PARTY",
+    "French Fries",
+    "Fries",
+    "Honey Mustard",
+    "Kinza Cola",
+    "Kinza Diet Cola",
+    "Kinza Diet Lemon",
+    "Kinza Lemon",
+    "Kinza Orange",
+    "Lipton Ice Tea - Lemon Zero",
+    "Lipton Ice Tea - Peach Zero",
+    "Lipton Ice Tea - Red Fruits Zero",
+    "Lipton Ice Tea - Tropical Zero",
+    "Little Cheeseburger",
+    "Little Chicken Burger",
+    "Little Chicken Burger Duo Combo",
+    "Little Wrap Fillaaa Meal",
+    "Little Wrap Fillaaa Duo Combo",
+    "Little Wrap Fillaaaa",
+    "Messy Fries",
+    "Miranda",
+    "Mirinda",
+    "Mountain Dew",
+    "Nesqiuk",
+    "Nuggets",
+    "Nuggets Duo Combo",
+    "Oreo Madness",
+    "Peanut Butter",
+    "Pepsi",
+    "Pepsi Zero",
+    "Quarter Pounder Burger",
+    "Quarter Pounder Meal",
+    "Schnitzel x Burger",
+    "Schnitzel X Meal",
+    "Salt",
+    "SMOKEY ROLLS BEEF",
+    "SMOKEY ROLLS BEEF Meal",
+    "Shani",
+    "Southwest Burger",
+    "Southwest Meal",
+    "Salt n Vinegar Tenders Fillaaa",
+    "\"Not So Ranch\" Sauce",
+    "Strawberry",
+    "Sweet Chili",
+    "Suuuper Beef",
+    "Suuuper Beef Combo",
+    "Suuuper Chicken",
+    "Suuuper Chicken Combo",
+    "Tang",
+    "Tenders Fillaaa",
+    "Toast",
+    "Triple X",
+    "Triple X Box",
+    "TRIPLE X Meal",
+    "Water",
+    "Westcoast Burger",
+    "Westcoast Meal",
+    "Kidkit Little chicken",
+    "Kidkit Little Cheese Burger",
+    "Kidkit Chicken Nuggets",
+    "XL Fillaaa Sauce",
+    "3amos Burger combo"
   ]
 };
 
@@ -2228,35 +2315,30 @@ const productSeedingData: Record<string, string[]> = {
       const currentCount = Number(countResult.count);
       console.log(`Brand ${brandName}: current count ${currentCount}, expected ${items.length}`);
       
-      if (currentCount !== items.length) {
-        console.log(`Cleaning up ${brandName} products (mismatch: ${currentCount} vs ${items.length})...`);
-        // Delete related records first to avoid foreign key violations
-        await db.query("DELETE FROM hidden_items WHERE product_id IN (SELECT id FROM products WHERE brand_id = $1)", [brand.id]);
-        await db.query("DELETE FROM hide_history WHERE product_id IN (SELECT id FROM products WHERE brand_id = $1)", [brand.id]);
-        const deleteResult = await db.query("DELETE FROM products WHERE brand_id = $1", [brand.id]);
-        console.log(`Deleted ${deleteResult.rowCount} products for ${brandName}`);
-      }
-
-      // Check count again after potential cleanup
-      const brandProductCount = await db.get("SELECT COUNT(*) as count FROM products WHERE brand_id = $1", [brand.id]);
-      if (Number(brandProductCount.count) >= items.length && items.length > 0) {
-        console.log(`Skipping seeding for ${brandName} as it already has the correct number of products.`);
+      if (currentCount >= items.length && items.length > 0) {
+        console.log(`Skipping seeding for ${brandName} as it already has ${currentCount} products.`);
         continue;
       }
 
-      if (items.length === 0) {
-        console.log(`No products to seed for ${brandName}.`);
-        continue;
-      }
-
-      console.log(`Seeding products for brand: ${brandName} (${items.length} items)...`);
+      console.log(`Seeding missing products for brand: ${brandName}...`);
       
-      // Use a transaction for each brand to speed up seeding significantly
       try {
         await db.transaction(async (client) => {
+          const productNameFieldId = fieldIdMap["Product Name (EN)"];
+          if (!productNameFieldId) return;
+
+          // Get existing product names for this brand to avoid duplicates
+          const existingProductsResult = await client.query(`
+            SELECT pfv.value as name
+            FROM products p
+            JOIN product_field_values pfv ON p.id = pfv.product_id
+            WHERE p.brand_id = $1 AND pfv.field_id = $2
+          `, [brand.id, productNameFieldId]);
+          
+          const existingNames = new Set(existingProductsResult.rows.map((r: any) => r.name));
+
           for (const itemName of items) {
-            const productNameFieldId = fieldIdMap["Product Name (EN)"];
-            if (!productNameFieldId) continue;
+            if (existingNames.has(itemName)) continue;
 
             const result = await client.query("INSERT INTO products (brand_id, created_by, status) VALUES ($1, $2, $3) RETURNING id", [brand.id, adminUserId || 1, 'Completed']);
             const productId = result.rows[0].id;
@@ -2283,22 +2365,9 @@ const productSeedingData: Record<string, string[]> = {
                 await client.query("INSERT INTO product_field_values (product_id, field_id, value) VALUES ($1, $2, $3)", [productId, fieldId, v.val]);
               }
             }
-
-            // Add sample modifiers
-            if (category.en === "Pizza") {
-              const groupResult = await client.query("INSERT INTO modifier_groups (product_id, name_en, name_ar, selection_type, is_required, min_selection, max_selection) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id", [productId, "Crust Type", "نوع العجينة", "single", 1, 1, 1]);
-              const groupId = groupResult.rows[0].id;
-              await client.query("INSERT INTO modifier_options (group_id, name_en, name_ar, price_adjustment) VALUES ($1, $2, $3, $4)", [groupId, "Thin Crust", "عجينة رقيقة", 0]);
-              await client.query("INSERT INTO modifier_options (group_id, name_en, name_ar, price_adjustment) VALUES ($1, $2, $3, $4)", [groupId, "Pan Pizza", "بان بيتزا", 0.5]);
-            } else if (category.en === "Burgers") {
-              const groupResult = await client.query("INSERT INTO modifier_groups (product_id, name_en, name_ar, selection_type, is_required, min_selection, max_selection) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id", [productId, "Extra Toppings", "إضافات", "multiple", 0, 0, 3]);
-              const groupId = groupResult.rows[0].id;
-              await client.query("INSERT INTO modifier_options (group_id, name_en, name_ar, price_adjustment) VALUES ($1, $2, $3, $4)", [groupId, "Extra Cheese", "جبنة إضافية", 0.250]);
-              await client.query("INSERT INTO modifier_options (group_id, name_en, name_ar, price_adjustment) VALUES ($1, $2, $3, $4)", [groupId, "Beef Bacon", "لحم بقري مقدد", 0.500]);
-            }
           }
         });
-        console.log(`Successfully seeded products for ${brandName}`);
+        console.log(`Successfully completed seeding for ${brandName}`);
       } catch (err) {
         console.error(`Failed to seed products for ${brandName}:`, err);
       }
@@ -2490,6 +2559,53 @@ async function startServer() {
         client.send(JSON.stringify(data));
       }
     });
+
+    // Trigger push notifications for new pending requests
+    if (data.type === 'PENDING_REQUEST_CREATED') {
+      sendPushToRoles(["Manager", "Super Visor", "Technical Back Office"], {
+        title: "New Pending Request",
+        body: "A new Hide/Busy request requires your approval.",
+        tag: "pending-request",
+        data: { type: "PENDING_REQUEST" }
+      });
+    }
+  };
+
+  const sendSystemNotification = (titleEn: string, titleAr: string, messageEn: string, messageAr: string, roles: string[], type: string = "NEW_REQUEST") => {
+    broadcast({
+      type: "NOTIFICATION",
+      notificationType: type,
+      title_en: titleEn,
+      title_ar: titleAr,
+      message_en: messageEn,
+      message_ar: messageAr,
+      role_target: roles
+    });
+  };
+
+  const sendPushToRoles = async (roles: string[], payload: any) => {
+    try {
+      const roleIds = await db.all(`SELECT id FROM roles WHERE name = ANY($1)`, [roles]);
+      const ids = roleIds.map((r: any) => r.id);
+      const subs = await db.all(`
+        SELECT ps.subscription 
+        FROM push_subscriptions ps
+        JOIN users u ON ps.user_id = u.id
+        WHERE u.role_id = ANY($1)
+      `, [ids]);
+
+      for (const row of subs) {
+        const sub = JSON.parse(row.subscription);
+        webpush.sendNotification(sub, JSON.stringify(payload)).catch(err => {
+          if (err.statusCode === 410 || err.statusCode === 404) {
+            // Subscription expired or no longer valid
+            db.query("DELETE FROM push_subscriptions WHERE subscription = $1", [row.subscription]);
+          }
+        });
+      }
+    } catch (error) {
+      console.error("Error sending push notifications:", error);
+    }
   };
 
   const getProductNameFieldId = async () => {
@@ -2669,6 +2785,14 @@ async function startServer() {
     `, [(req as any).user.id, type, JSON.stringify(data)]);
     
     broadcast({ type: "PENDING_REQUEST_CREATED" });
+    const branchName = data.branch_name || data.branch || "Unknown Branch";
+    sendSystemNotification(
+      "New Request Submitted",
+      "تم إرسال طلب جديد",
+      `New request received from ${branchName}`,
+      `طلب جديد مستلم من ${branchName}`,
+      ["Technical Back Office"]
+    );
     res.json({ id: result.rows[0].id });
   });
 
@@ -4229,6 +4353,26 @@ async function startServer() {
   });
 
   // User Management
+  app.post("/api/notifications/subscribe", authenticate, async (req, res) => {
+    const subscription = req.body;
+    const userId = (req as any).user.id;
+
+    try {
+      const existing = await db.get("SELECT id FROM push_subscriptions WHERE user_id = $1 AND subscription = $2", [userId, JSON.stringify(subscription)]);
+      if (!existing) {
+        await db.query("INSERT INTO push_subscriptions (user_id, subscription) VALUES ($1, $2)", [userId, JSON.stringify(subscription)]);
+      }
+      res.status(201).json({});
+    } catch (error) {
+      console.error("Error saving push subscription:", error);
+      res.status(500).json({ error: "Failed to subscribe" });
+    }
+  });
+
+  app.get("/api/notifications/vapid-public-key", (req, res) => {
+    res.json({ publicKey: publicVapidKey });
+  });
+
   try {
     await db.exec("ALTER TABLE users ADD COLUMN branch_id INTEGER REFERENCES branches(id)");
   } catch (e) {}
@@ -4719,7 +4863,14 @@ async function startServer() {
       `, [productNameFieldId, product_ids]);
 
       const brand = await db.get("SELECT name FROM brands WHERE id = $1", [brand_id]) as { name: string };
-      const branch = branch_id ? await db.get("SELECT name FROM branches WHERE id = $1", [branch_id]) as { name: string } : { name: 'All Branches' };
+      
+      // Force branch_id for Restaurant users if missing
+      let effectiveBranchId = branch_id;
+      if (!effectiveBranchId && (req as any).user.role_name === 'Restaurants' && (req as any).user.branch_id) {
+        effectiveBranchId = (req as any).user.branch_id;
+      }
+      
+      const branch = effectiveBranchId ? await db.get("SELECT name FROM branches WHERE id = $1", [effectiveBranchId]) as { name: string } : { name: 'All Branches' };
 
       const result = await db.query(`
         INSERT INTO pending_requests (user_id, type, data, created_at, updated_at)
@@ -4727,6 +4878,7 @@ async function startServer() {
         RETURNING id
       `, [(req as any).user.id, 'hide_unhide', JSON.stringify({ 
         ...req.body, 
+        branch_id: effectiveBranchId,
         brand_name: brand?.name || 'Unknown',
         branch_name: branch?.name || 'All Branches',
         action: 'HIDE', 
@@ -4735,6 +4887,14 @@ async function startServer() {
       }), getCurrentKuwaitTime(), getCurrentKuwaitTime()]);
       
       broadcast({ type: "PENDING_REQUEST_CREATED" });
+      const branchName = req.body.branch_name || "Unknown Branch";
+      sendSystemNotification(
+        "New Hide Request",
+        "طلب إخفاء جديد",
+        `New hide request received from ${branchName}`,
+        `طلب إخفاء جديد مستلم من ${branchName}`,
+        ["Technical Back Office"]
+      );
       return res.json({ id: result.rows[0].id, pending: true });
     }
 
@@ -5181,6 +5341,14 @@ async function startServer() {
       ]);
       
       broadcast({ type: "PENDING_REQUEST_CREATED" });
+      const branchName = req.body.branch_name || "Unknown Branch";
+      sendSystemNotification(
+        "New Unhide Request",
+        "طلب إظهار جديد",
+        `New unhide request received from ${branchName}`,
+        `طلب إظهار جديد مستلم من ${branchName}`,
+        ["Technical Back Office"]
+      );
       return res.json({ id: result.rows[0].id, pending: true });
     }
 
@@ -5251,6 +5419,14 @@ async function startServer() {
       ]);
       
       broadcast({ type: "PENDING_REQUEST_CREATED" });
+      const branchName = req.body.branch_name || "Unknown Branch";
+      sendSystemNotification(
+        "New Bulk Hide Request",
+        "طلب إخفاء متعدد جديد",
+        `New bulk hide request received from ${branchName}`,
+        `طلب إخفاء متعدد جديد مستلم من ${branchName}`,
+        ["Technical Back Office"]
+      );
       return res.json({ id: result.rows[0].id, pending: true });
     }
 
@@ -5342,14 +5518,13 @@ async function startServer() {
         });
         
         broadcast({ type: "PENDING_REQUEST_CREATED" });
-        broadcast({
-          type: "NOTIFICATION",
-          notificationType: "SYSTEM_ACTION",
-          title_en: "New Request Submitted",
-          title_ar: "تم إرسال طلب جديد",
-          message_en: `A new busy branch request has been submitted by ${(req as any).user.username}`,
-          message_ar: `تم إرسال طلب إغلاق فرع جديد من قبل ${(req as any).user.username}`,
-        });
+        sendSystemNotification(
+          "New Busy Branch Request",
+          "طلب فرع مزدحم جديد",
+          `New busy branch request received from ${branch}`,
+          `طلب فرع مزدحم جديد مستلم من ${branch}`,
+          ["Technical Back Office"]
+        );
         return res.json({ id: result.rows[0].id, pending: true });
       } catch (err: any) {
         if (err.message === "DUPLICATE_REQUEST") {
@@ -5848,6 +6023,16 @@ async function startServer() {
     console.log("Contents of dist:", fs.readdirSync(distPath));
   }
   console.log("--------------------------");
+
+  // API 404 Handler - MUST BE BEFORE STATIC SERVING
+  app.all("/api/*", (req, res) => {
+    console.warn(`API 404: ${req.method} ${req.url}`);
+    res.status(404).json({ 
+      error: "Not Found", 
+      message: `API route ${req.method} ${req.path} not found on this server.`,
+      path: req.path
+    });
+  });
 
   if (process.env.NODE_ENV !== "production") {
     console.log("Development mode: Starting Vite middleware...");
